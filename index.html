@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cross-Device SOS Emergency System</title>
-  <!-- Load MQTT Library for Real-Time Cross-Device Communication -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <!-- Load PubNub SDK for reliable cross-device communication -->
+  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
   <style>
     :root {
       --danger: #dc3545;
@@ -152,48 +152,37 @@
 </div>
 
 <script>
-  // UNIQUE CHANNEL NAME: You can change this word to keep your project private
-  const MQTT_TOPIC = "science_exhibition_2026/sos_channel";
-
-  let mqttClient;
+  const EMERGENCY_CHANNEL = "science_exhibition_2026_sos";
+  let pubnub;
   let audioContext;
   let sirenOscillator;
 
-  // 1. Setup Secure MQTT Connection
-  function initMQTT() {
-    const clientId = "device_" + Math.random().toString(16).substr(2, 8);
-    
-    // Connect to HiveMQ public broker using HTTPS secure WebSockets (Port 8884)
-    mqttClient = new Paho.MQTT.Client("broker.hivemq.com", 8884, clientId);
+  // Initialize PubNub
+  function initPubNub() {
+    pubnub = new PubNub({
+      publishKey: "pub-c-8be8ee37-0104-4c4c-a11e-8cb5b678f5a3",
+      subscribeKey: "sub-c-11231f2b-7b0a-4284-9c02-76beeb0f2d48",
+      userId: "user_" + Math.random().toString(16).substr(2, 8)
+    });
 
-    mqttClient.onConnectionLost = onConnectionLost;
-    mqttClient.onMessageArrived = onMessageArrived;
-
-    mqttClient.connect({
-      useSSL: true, // Secure connection required for HTTPS / GitHub Pages
-      onSuccess: onConnect,
-      onFailure: (err) => {
-        console.log("MQTT Connection Error: ", err);
-        document.getElementById('connection-status').innerText = "❌ Connection Failed. Reconnecting...";
-        document.getElementById('connection-status').className = "status-bar status-disconnected";
-        setTimeout(initMQTT, 3000);
+    pubnub.addListener({
+      status: (statusEvent) => {
+        if (statusEvent.category === "PNConnectedCategory") {
+          document.getElementById('connection-status').innerText = "🟢 Connected to Emergency Cloud Server";
+          document.getElementById('connection-status').className = "status-bar status-connected";
+        }
+      },
+      message: (messageEvent) => {
+        handleEmergencyMessage(messageEvent.message);
       }
+    });
+
+    pubnub.subscribe({
+      channels: [EMERGENCY_CHANNEL]
     });
   }
 
-  function onConnect() {
-    document.getElementById('connection-status').innerText = "🟢 Connected to Emergency Cloud Server";
-    document.getElementById('connection-status').className = "status-bar status-connected";
-    mqttClient.subscribe(MQTT_TOPIC);
-  }
-
-  function onConnectionLost(response) {
-    document.getElementById('connection-status').innerText = "⚠️ Disconnected from server. Reconnecting...";
-    document.getElementById('connection-status').className = "status-bar status-disconnected";
-    setTimeout(initMQTT, 3000);
-  }
-
-  // 2. Patient Action: Send SOS
+  // Patient: Send SOS
   function sendSOS() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -221,21 +210,22 @@
       lng: lng
     };
 
-    const message = new Paho.MQTT.Message(JSON.stringify(emergencyData));
-    message.destinationName = MQTT_TOPIC;
-    mqttClient.send(message);
-
-    alert("🚨 SOS Signal Sent to Hospital!");
+    pubnub.publish({
+      channel: EMERGENCY_CHANNEL,
+      message: emergencyData
+    }, (status, response) => {
+      if (!status.error) {
+        alert("🚨 SOS Signal Sent to Hospital!");
+      } else {
+        alert("Failed to send SOS: " + status.errorData);
+      }
+    });
   }
 
-  // 3. Hospital Action: Receive Signal
-  function onMessageArrived(message) {
-    const data = JSON.parse(message.payloadString);
-    
-    // Play Siren Alert
+  // Hospital: Handle Signal
+  function handleEmergencyMessage(data) {
     playSiren();
 
-    // Display Alert Card
     const alertContainer = document.getElementById('alert-container');
     
     let locationHTML = "Location not available";
@@ -286,7 +276,7 @@
     }
   }
 
-  // UI Navigation
+  // Navigation
   function switchTab(tab) {
     if (tab === 'patient') {
       document.getElementById('patient-view').style.display = 'block';
@@ -297,11 +287,12 @@
       document.getElementById('patient-view').style.display = 'none';
       document.getElementById('hospital-view').style.display = 'block';
       document.getElementById('btn-patient-tab').classList.remove('active');
+      document.getElementById('btn-hospital-tab').classList.active = false;
       document.getElementById('btn-hospital-tab').classList.add('active');
     }
   }
 
-  window.onload = initMQTT;
+  window.onload = initPubNub;
 </script>
 
 </body>
