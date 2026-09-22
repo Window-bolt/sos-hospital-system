@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Dispatch Center</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background-color: #f3e5f5;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 700px;
+      margin: 0 auto;
+      border-top: 6px solid #6a1b9a;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .alert-card {
+      background-color: #ffebee;
+      border-left: 6px solid #ff1744;
+      padding: 18px;
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+    .btn-maps {
+      background-color: #6a1b9a;
+      color: white;
+      padding: 10px 18px;
+      text-decoration: none;
+      border-radius: 8px;
+      display: inline-block;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+    .btn-stop {
+      background-color: #ff1744;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      float: right;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <button class="btn-stop" onclick="stopSiren()">🔕 Silence Siren</button>
+  <h2 style="color: #6a1b9a; margin-top: 0;">🏥 Hospital Dispatch Dashboard</h2>
+  <p style="color: #666;">Listening for real-time patient emergency signals...</p>
+
+  <div id="alert-container">
+    <p style="color: #888;">No active emergency calls right now.</p>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    databaseURL: "https://sos-system-default-rtdb.firebaseio.com/"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  let audioContext;
+  let sirenOscillator;
+
+  // Listen for incoming emergency signals
+  database.ref('emergencies').on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      displayAlert(data);
+    }
+  });
+
+  function displayAlert(data) {
+    playSiren();
+
+    const alertContainer = document.getElementById('alert-container');
+    
+    let locationHTML = "<span style='color:#777;'>Location unavailable</span>";
+    if (data.lat && data.lng) {
+      const mapsUrl = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
+      locationHTML = `<a href="${mapsUrl}" target="_blank" class="btn-maps">📍 Open Google Maps Directions</a>`;
+    }
+
+    const alertHTML = `
+      <div class="alert-card">
+        <h3 style="color: #ff1744; margin: 0 0 8px 0;">🚨 EMERGENCY ALERT - ${data.timestamp}</h3>
+        <p style="margin: 4px 0;"><strong>Patient:</strong> ${data.name}</p>
+        <p style="margin: 4px 0 12px 0;"><strong>Condition:</strong> ${data.details}</p>
+        <div>${locationHTML}</div>
+      </div>
+    `;
+
+    if (alertContainer.innerHTML.includes("No active emergency")) {
+      alertContainer.innerHTML = alertHTML;
+    } else {
+      alertContainer.innerHTML = alertHTML + alertContainer.innerHTML;
+    }
+  }
+
+  function playSiren() {
+    stopSiren();
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    sirenOscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    sirenOscillator.type = 'sine';
+    sirenOscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+    sirenOscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.5);
+
+    sirenOscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    sirenOscillator.start();
+    sirenOscillator.loop = true;
+  }
+
+  function stopSiren() {
+    if (sirenOscillator) {
+      sirenOscillator.stop();
+      sirenOscillator.disconnect();
+      sirenOscillator = null;
+    }
+  }
+</script>
+
+</body>
+</html>
