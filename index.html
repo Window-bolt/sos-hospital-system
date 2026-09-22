@@ -226,14 +226,16 @@
   firebase.initializeApp(firebaseConfig);
   const database = firebase.database();
 
+  let currentMode = "patient"; // Track current active tab
   let audioContext;
   let sirenOscillator;
 
-  // Initialize Listener on Hospital Side
+  // Initialize Listener ONLY on Hospital Side
   function listenForEmergencies() {
     database.ref('emergencies').on('child_added', (snapshot) => {
       const data = snapshot.val();
-      if (data) {
+      // Only process alert and trigger siren if the user is currently on the Hospital tab
+      if (data && currentMode === "hospital") {
         displayEmergencyAlert(data);
       }
     });
@@ -269,7 +271,7 @@
 
     database.ref('emergencies').push(payload)
       .then(() => {
-        alert("🚨 SOS Signal Transmitted Successfully!");
+        alert("🚨 SOS Signal Transmitted Successfully to Hospital!");
       })
       .catch((err) => {
         alert("Signal Error: " + err.message);
@@ -332,6 +334,9 @@
 
   // Navigation Tabs
   function switchTab(tab) {
+    currentMode = tab;
+    stopSiren(); // Stop siren when switching tabs
+
     if (tab === 'patient') {
       document.getElementById('patient-view').style.display = 'block';
       document.getElementById('hospital-view').style.display = 'none';
