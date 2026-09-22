@@ -3,355 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Emergency SOS Response System</title>
-  
-  <!-- Firebase App & Database SDKs -->
+  <title>Patient SOS Portal</title>
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
   <style>
-    :root {
-      --purple-primary: #6a1b9a;
-      --purple-dark: #4a148c;
-      --purple-light: #f3e5f5;
-      --green-accent: #00e676;
-      --green-dark: #00a152;
-      --danger-red: #ff1744;
-      --card-bg: #ffffff;
-      --text-dark: #212121;
-    }
-
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
       padding: 20px;
-      background-color: var(--purple-light);
-      color: var(--text-dark);
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    /* Header & Navigation */
-    .app-header {
-      background: linear-gradient(135deg, var(--purple-dark), var(--purple-primary));
-      color: white;
-      padding: 20px;
-      border-radius: 12px;
+      background-color: #f3e5f5;
       text-align: center;
-      box-shadow: 0 4px 15px rgba(106, 27, 154, 0.3);
-      margin-bottom: 20px;
     }
-
-    .nav-tabs {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 14px;
-      border: 2px solid var(--purple-primary);
-      background-color: white;
-      color: var(--purple-primary);
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 10px;
-      transition: all 0.2s ease;
-    }
-
-    .tab-btn.active {
-      background-color: var(--purple-primary);
-      color: white;
-    }
-
     .card {
-      background: var(--card-bg);
+      background: white;
       padding: 25px;
-      border-radius: 14px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
-      border-top: 5px solid var(--purple-primary);
+      border-radius: 12px;
+      max-width: 500px;
+      margin: 0 auto;
+      border-top: 6px solid #6a1b9a;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-
-    .status-bar {
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      font-weight: bold;
-      text-align: center;
-      background-color: #e8f5e9;
-      color: var(--green-dark);
-      border: 1px solid var(--green-accent);
-    }
-
-    /* Big Green SOS Button */
     .sos-btn {
       width: 100%;
       height: 140px;
-      background: linear-gradient(135deg, var(--green-accent), var(--green-dark));
+      background: linear-gradient(135deg, #00e676, #00a152);
       color: white;
       border: none;
       border-radius: 70px;
       font-size: 32px;
       font-weight: 800;
       cursor: pointer;
+      margin: 20px 0;
       box-shadow: 0 8px 20px rgba(0, 230, 118, 0.4);
-      transition: transform 0.1s, box-shadow 0.1s;
-      margin: 15px 0;
-      text-transform: uppercase;
-      letter-spacing: 1px;
     }
-
     .sos-btn:active {
       transform: scale(0.98);
-      box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4);
     }
-
-    /* Form Fields */
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 600;
-      color: var(--purple-dark);
-    }
-
     input, textarea {
       width: 100%;
       padding: 12px;
+      margin-top: 6px;
+      margin-bottom: 16px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       box-sizing: border-box;
       font-size: 15px;
     }
-
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--purple-primary);
-    }
-
-    /* Hospital View Alerts */
-    .alert-card {
-      border-left: 6px solid var(--danger-red);
-      background-color: #ffebee;
-      padding: 18px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-    }
-
-    .btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    label {
+      display: block;
+      text-align: left;
       font-weight: bold;
-      font-size: 14px;
-    }
-
-    .btn-maps {
-      background-color: var(--purple-primary);
-      color: white;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .btn-stop {
-      background-color: var(--danger-red);
-      color: white;
+      color: #4a148c;
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="app-header">
-    <h1 style="margin: 0; font-size: 26px;">🚨 Emergency Response System</h1>
-  </div>
+<div class="card">
+  <h2 style="color: #6a1b9a; margin-top: 0;">📱 Patient Emergency Portal</h2>
   
-  <div class="nav-tabs">
-    <button class="tab-btn active" id="btn-patient-tab" onclick="switchTab('patient')">📱 Patient Portal</button>
-    <button class="tab-btn" id="btn-hospital-tab" onclick="switchTab('hospital')">🏥 Hospital Dashboard</button>
-  </div>
+  <button class="sos-btn" onclick="sendSOS()">TRIGGER SOS</button>
 
-  <div id="connection-status" class="status-bar">
-    🟢 System Connected & Ready
-  </div>
+  <label>Patient Name:</label>
+  <input type="text" id="patient-name" placeholder="John Doe">
 
-  <!-- PATIENT PORTAL -->
-  <div id="patient-view" class="card">
-    <h3 style="color: var(--purple-dark); margin-top: 0;">Press Button for Immediate Assistance</h3>
-    
-    <button class="sos-btn" onclick="sendSOS()">TRIGGER SOS</button>
-
-    <h3 style="color: var(--purple-dark); margin-top: 30px;">Patient Details (Optional)</h3>
-    <div class="form-group">
-      <label>Full Name:</label>
-      <input type="text" id="patient-name" placeholder="John Doe">
-    </div>
-    <div class="form-group">
-      <label>Emergency Message / Medical Info:</label>
-      <textarea id="patient-details" rows="3" placeholder="e.g., Severe chest pain, allergic to penicillin"></textarea>
-    </div>
-  </div>
-
-  <!-- HOSPITAL DASHBOARD -->
-  <div id="hospital-view" class="card" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <h3 style="color: var(--purple-dark); margin: 0;">Live Dispatch Feed</h3>
-      <button class="btn btn-stop" onclick="stopSiren()">🔕 Silence Siren</button>
-    </div>
-    
-    <p style="color: #666; font-size: 14px;">Incoming patient emergency calls appear here automatically.</p>
-    
-    <div id="alert-container" style="margin-top: 20px;">
-      <p style="color: #888;">No active emergency calls right now.</p>
-    </div>
-  </div>
+  <label>Emergency Details:</label>
+  <textarea id="patient-details" rows="3" placeholder="Severe chest pain / Blood type O+"></textarea>
 </div>
 
 <script>
-  // Shared Public Firebase Database Instance
   const firebaseConfig = {
     databaseURL: "https://sos-system-default-rtdb.firebaseio.com/"
   };
-  
   firebase.initializeApp(firebaseConfig);
   const database = firebase.database();
 
-  let currentMode = "patient"; // Track current active tab
-  let audioContext;
-  let sirenOscillator;
-
-  // Initialize Listener ONLY on Hospital Side
-  function listenForEmergencies() {
-    database.ref('emergencies').on('child_added', (snapshot) => {
-      const data = snapshot.val();
-      // Only process alert and trigger siren if the user is currently on the Hospital tab
-      if (data && currentMode === "hospital") {
-        displayEmergencyAlert(data);
-      }
-    });
-  }
-
-  // Patient Sends Emergency Data
   function sendSOS() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          pushToCloud(position.coords.latitude, position.coords.longitude);
-        },
-        () => {
-          pushToCloud(null, null);
-        }
+        (pos) => pushData(pos.coords.latitude, pos.coords.longitude),
+        () => pushData(null, null)
       );
     } else {
-      pushToCloud(null, null);
+      pushData(null, null);
     }
   }
 
-  function pushToCloud(lat, lng) {
-    const name = document.getElementById('patient-name').value || "Unknown Patient";
-    const details = document.getElementById('patient-details').value || "No emergency message provided.";
-
+  function pushData(lat, lng) {
     const payload = {
       timestamp: new Date().toLocaleTimeString(),
-      name: name,
-      details: details,
+      name: document.getElementById('patient-name').value || "Unknown Patient",
+      details: document.getElementById('patient-details').value || "No details provided",
       lat: lat,
       lng: lng
     };
 
     database.ref('emergencies').push(payload)
       .then(() => {
-        alert("🚨 SOS Signal Transmitted Successfully to Hospital!");
+        alert("🚨 SOS Signal Sent to Hospital!");
       })
       .catch((err) => {
-        alert("Signal Error: " + err.message);
+        alert("Error sending SOS: " + err.message);
       });
   }
-
-  // Display Alert & Trigger Siren on Hospital Screen
-  function displayEmergencyAlert(data) {
-    playSiren();
-
-    const alertContainer = document.getElementById('alert-container');
-    
-    let locationHTML = "<span style='color:#777;'>Location unavailable</span>";
-    if (data.lat && data.lng) {
-      const mapsUrl = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
-      locationHTML = `<a href="${mapsUrl}" target="_blank" class="btn btn-maps">📍 Open Google Maps Directions</a>`;
-    }
-
-    const alertHTML = `
-      <div class="alert-card">
-        <h4 style="color: var(--danger-red); margin: 0 0 8px 0;">🚨 EMERGENCY ALERT - ${data.timestamp}</h4>
-        <p style="margin: 4px 0;"><strong>Patient:</strong> ${data.name}</p>
-        <p style="margin: 4px 0 12px 0;"><strong>Condition:</strong> ${data.details}</p>
-        <div>${locationHTML}</div>
-      </div>
-    `;
-
-    if (alertContainer.innerHTML.includes("No active emergency calls")) {
-      alertContainer.innerHTML = alertHTML;
-    } else {
-      alertContainer.innerHTML = alertHTML + alertContainer.innerHTML;
-    }
-  }
-
-  // Siren Sound Generator
-  function playSiren() {
-    stopSiren();
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    sirenOscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    sirenOscillator.type = 'sine';
-    sirenOscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-    sirenOscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.5);
-
-    sirenOscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    sirenOscillator.start();
-    sirenOscillator.loop = true;
-  }
-
-  function stopSiren() {
-    if (sirenOscillator) {
-      sirenOscillator.stop();
-      sirenOscillator.disconnect();
-      sirenOscillator = null;
-    }
-  }
-
-  // Navigation Tabs
-  function switchTab(tab) {
-    currentMode = tab;
-    stopSiren(); // Stop siren when switching tabs
-
-    if (tab === 'patient') {
-      document.getElementById('patient-view').style.display = 'block';
-      document.getElementById('hospital-view').style.display = 'none';
-      document.getElementById('btn-patient-tab').classList.add('active');
-      document.getElementById('btn-hospital-tab').classList.remove('active');
-    } else {
-      document.getElementById('patient-view').style.display = 'none';
-      document.getElementById('hospital-view').style.display = 'block';
-      document.getElementById('btn-patient-tab').classList.remove('active');
-      document.getElementById('btn-hospital-tab').classList.add('active');
-    }
-  }
-
-  // Start listening for alerts on load
-  window.onload = listenForEmergencies;
 </script>
 
 </body>
