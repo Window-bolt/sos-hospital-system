@@ -152,28 +152,31 @@
 </div>
 
 <script>
-  // UNIQUE CHANNEL NAME: Change this word to something unique for your exhibition project!
+  // UNIQUE CHANNEL NAME: You can change this word to keep your project private
   const MQTT_TOPIC = "science_exhibition_2026/sos_channel";
 
   let mqttClient;
   let audioContext;
   let sirenOscillator;
 
-  // 1. Setup MQTT Connection
+  // 1. Setup Secure MQTT Connection
   function initMQTT() {
     const clientId = "device_" + Math.random().toString(16).substr(2, 8);
-    // Connecting to HiveMQ free public WebSocket broker
-    mqttClient = new Paho.MQTT.Client("broker.hivemq.com", 8000, clientId);
+    
+    // Connect to HiveMQ public broker using HTTPS secure WebSockets (Port 8884)
+    mqttClient = new Paho.MQTT.Client("broker.hivemq.com", 8884, clientId);
 
     mqttClient.onConnectionLost = onConnectionLost;
     mqttClient.onMessageArrived = onMessageArrived;
 
     mqttClient.connect({
+      useSSL: true, // Secure connection required for HTTPS / GitHub Pages
       onSuccess: onConnect,
-      onFailure: () => {
+      onFailure: (err) => {
+        console.log("MQTT Connection Error: ", err);
         document.getElementById('connection-status').innerText = "❌ Connection Failed. Reconnecting...";
         document.getElementById('connection-status').className = "status-bar status-disconnected";
-        setTimeout(initMQTT, 5000);
+        setTimeout(initMQTT, 3000);
       }
     });
   }
@@ -181,7 +184,6 @@
   function onConnect() {
     document.getElementById('connection-status').innerText = "🟢 Connected to Emergency Cloud Server";
     document.getElementById('connection-status').className = "status-bar status-connected";
-    // Subscribe to emergency topic
     mqttClient.subscribe(MQTT_TOPIC);
   }
 
@@ -199,7 +201,6 @@
           publishEmergency(position.coords.latitude, position.coords.longitude);
         },
         () => {
-          // Fallback if location access is denied/unavailable
           publishEmergency(null, null);
         }
       );
@@ -231,7 +232,7 @@
   function onMessageArrived(message) {
     const data = JSON.parse(message.payloadString);
     
-    // Play Alert Sound
+    // Play Siren Alert
     playSiren();
 
     // Display Alert Card
@@ -300,7 +301,6 @@
     }
   }
 
-  // Initialize MQTT when page loads
   window.onload = initMQTT;
 </script>
 
